@@ -32,6 +32,9 @@ class Lesson(models.Model):
 
     class Meta:
         ordering = ['order']
+        indexes = [
+            models.Index(fields=['course', 'order']),
+        ]
 
 
 class Question(models.Model):
@@ -55,6 +58,9 @@ class Question(models.Model):
 
     class Meta:
         ordering = ['order']
+        indexes = [
+            models.Index(fields=['lesson', 'order']),
+        ]
 
 
 class Choice(models.Model):
@@ -98,6 +104,10 @@ class Submission(models.Model):
     class Meta:
         ordering = ['-submitted_at']
         unique_together = ('student', 'lesson')
+        indexes = [
+            models.Index(fields=['student', 'lesson']),
+            models.Index(fields=['status', '-submitted_at']),
+        ]
 
 
 class SubmissionAnswer(models.Model):

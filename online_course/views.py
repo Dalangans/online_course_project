@@ -1,6 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.utils import timezone
 from django.db import transaction
@@ -115,8 +114,11 @@ def show_exam_result(request, submission_id):
     if submission.student != request.user and not request.user.is_staff:
         return redirect('course_list')
     
-    # Get answers for this submission
-    answers = SubmissionAnswer.objects.filter(submission=submission).select_related('question', 'selected_choice')
+    # Get answers for this submission with optimized queries
+    answers = SubmissionAnswer.objects.filter(submission=submission).select_related(
+        'question__lesson',
+        'selected_choice'
+    ).prefetch_related('question__choices')
     
     # Prepare detailed results
     detailed_results = []
