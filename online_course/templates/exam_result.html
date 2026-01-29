@@ -1,0 +1,255 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Exam Result - {{ submission.lesson.title }}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <!-- Result Header -->
+    <div class="row mb-5">
+        <div class="col-lg-10 mx-auto">
+            {% if is_passed %}
+                <div class="alert alert-success alert-lg" role="alert">
+                    <div class="text-center">
+                        <h1 class="display-4 mb-3">
+                            <i class="fas fa-trophy text-warning"></i> Congratulations!
+                        </h1>
+                        <p class="lead mb-0">You have successfully passed the exam for <strong>{{ submission.lesson.title }}</strong></p>
+                    </div>
+                </div>
+            {% else %}
+                <div class="alert alert-danger alert-lg" role="alert">
+                    <div class="text-center">
+                        <h1 class="display-4 mb-3">
+                            <i class="fas fa-times-circle"></i> Exam Not Passed
+                        </h1>
+                        <p class="lead mb-0">You need a score of at least {{ passing_score }}% to pass. Please review and try again.</p>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Score Summary -->
+    <div class="row mb-5">
+        <div class="col-lg-10 mx-auto">
+            <div class="row">
+                <!-- Score Card -->
+                <div class="col-md-4 mb-4">
+                    <div class="card text-center shadow-sm">
+                        <div class="card-body">
+                            <div class="score-display">
+                                <h2 class="display-3 {% if is_passed %}text-success{% else %}text-danger{% endif %}">
+                                    {{ submission.score }}%
+                                </h2>
+                                <p class="text-muted mb-0">Your Score</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Questions Card -->
+                <div class="col-md-4 mb-4">
+                    <div class="card text-center shadow-sm">
+                        <div class="card-body">
+                            <h3 class="text-primary">{{ submission.correct_answers }}/{{ submission.total_questions }}</h3>
+                            <p class="text-muted mb-0">Correct Answers</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Points Card -->
+                <div class="col-md-4 mb-4">
+                    <div class="card text-center shadow-sm">
+                        <div class="card-body">
+                            <h3 class="text-info">{{ total_points_earned }}/{{ total_points_possible }}</h3>
+                            <p class="text-muted mb-0">Points Earned</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detailed Results -->
+    <div class="row mb-5">
+        <div class="col-lg-10 mx-auto">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Detailed Results</h5>
+                </div>
+                <div class="card-body">
+                    <div class="accordion accordion-flush" id="resultsAccordion">
+                        {% for result in detailed_results %}
+                            <div class="accordion-item">
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button {% if not result.is_correct %}collapsed bg-danger-subtle{% endif %}" type="button" data-bs-toggle="collapse" data-bs-target="#result{{ forloop.counter }}">
+                                        <span class="badge {% if result.is_correct %}bg-success{% else %}bg-danger{% endif %} me-3">
+                                            {% if result.is_correct %}✓ Correct{% else %}✗ Incorrect{% endif %}
+                                        </span>
+                                        <strong class="me-2">Question {{ forloop.counter }}:</strong>
+                                        <span class="text-truncate">{{ result.question_text }}</span>
+                                    </button>
+                                </h2>
+                                <div id="result{{ forloop.counter }}" class="accordion-collapse collapse" data-bs-parent="#resultsAccordion">
+                                    <div class="accordion-body">
+                                        <!-- Question Text -->
+                                        <h6 class="mb-3">Question</h6>
+                                        <p class="mb-4">{{ result.question_text }}</p>
+
+                                        <!-- All Choices -->
+                                        <h6 class="mb-3">Available Options:</h6>
+                                        <div class="options-container mb-4">
+                                            {% for choice in result.all_choices %}
+                                                <div class="card mb-2 {% if choice.is_correct %}border-success{% elif choice.id == result.selected_choice.id %}border-danger{% else %}border-light{% endif %}">
+                                                    <div class="card-body py-2 px-3">
+                                                        <div class="d-flex justify-content-between align-items-center">
+                                                            <span>
+                                                                {% if choice.id == result.selected_choice.id %}
+                                                                    <strong class="{% if choice.is_correct %}text-success{% else %}text-danger{% endif %}">
+                                                                        {{ choice.choice_text }}
+                                                                    </strong>
+                                                                    <span class="badge {% if choice.is_correct %}bg-success{% else %}bg-danger{% endif %} ms-2">
+                                                                        {% if choice.is_correct %}Your answer (Correct){% else %}Your answer (Incorrect){% endif %}
+                                                                    </span>
+                                                                {% else %}
+                                                                    <span class="{% if choice.is_correct %}text-success{% endif %}">
+                                                                        {{ choice.choice_text }}
+                                                                    </span>
+                                                                    {% if choice.is_correct %}
+                                                                        <span class="badge bg-success ms-2">Correct answer</span>
+                                                                    {% endif %}
+                                                                {% endif %}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+
+                                        <!-- Result Summary -->
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <h6>Your Answer:</h6>
+                                                <p class="mb-0">
+                                                    {% if result.selected_choice %}
+                                                        <span class="badge bg-{% if result.is_correct %}success{% else %}danger{% endif %}">
+                                                            {{ result.selected_choice.choice_text }}
+                                                        </span>
+                                                    {% else %}
+                                                        <span class="badge bg-secondary">No Answer Selected</span>
+                                                    {% endif %}
+                                                </p>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <h6>Points:</h6>
+                                                <p class="mb-0">
+                                                    <span class="badge bg-{% if result.is_correct %}success{% else %}danger{% endif %}">
+                                                        {{ result.points_earned }}/{{ result.total_points }}
+                                                    </span>
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Submission Info -->
+    <div class="row mb-5">
+        <div class="col-lg-10 mx-auto">
+            <div class="card shadow-sm">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0">Submission Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <dl class="row">
+                                <dt class="col-sm-6">Student:</dt>
+                                <dd class="col-sm-6">{{ submission.student.get_full_name|default:submission.student.username }}</dd>
+
+                                <dt class="col-sm-6">Lesson:</dt>
+                                <dd class="col-sm-6">{{ submission.lesson.title }}</dd>
+
+                                <dt class="col-sm-6">Status:</dt>
+                                <dd class="col-sm-6">
+                                    <span class="badge bg-success">{{ submission.get_status_display }}</span>
+                                </dd>
+                            </dl>
+                        </div>
+                        <div class="col-md-6">
+                            <dl class="row">
+                                <dt class="col-sm-6">Submitted At:</dt>
+                                <dd class="col-sm-6">{{ submission.submitted_at|date:"M d, Y H:i" }}</dd>
+
+                                <dt class="col-sm-6">Graded At:</dt>
+                                <dd class="col-sm-6">{{ submission.graded_at|date:"M d, Y H:i" }}</dd>
+
+                                <dt class="col-sm-6">Passing Score:</dt>
+                                <dd class="col-sm-6">{{ passing_score }}%</dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="row mb-5">
+        <div class="col-lg-10 mx-auto">
+            <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                <a href="{% url 'online_course:course_details' submission.lesson.course.id %}" class="btn btn-primary btn-lg">
+                    <i class="fas fa-arrow-left"></i> Back to Course
+                </a>
+                {% if not is_passed %}
+                    <a href="{% url 'online_course:submit' submission.lesson.id %}" class="btn btn-warning btn-lg">
+                        <i class="fas fa-redo"></i> Retake Exam
+                    </a>
+                {% endif %}
+                <a href="{% url 'online_course:course_list' %}" class="btn btn-outline-secondary btn-lg">
+                    <i class="fas fa-home"></i> Go to Courses
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .score-display {
+        padding: 2rem 0;
+    }
+
+    .alert-lg {
+        padding: 2rem;
+    }
+
+    .accordion-button.bg-danger-subtle {
+        background-color: #f8d7da !important;
+    }
+
+    .options-container .card {
+        transition: all 0.2s;
+    }
+
+    .options-container .card:hover {
+        transform: translateX(5px);
+    }
+
+    .card.border-success {
+        border-color: #198754 !important;
+        background-color: #f0f8f5;
+    }
+
+    .card.border-danger {
+        border-color: #dc3545 !important;
+        background-color: #f8d7da;
+    }
+</style>
+{% endblock %}

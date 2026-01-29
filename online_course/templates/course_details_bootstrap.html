@@ -1,0 +1,183 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ course.name }} - Course Details{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <!-- Course Header -->
+    <div class="row mb-5">
+        <div class="col-lg-8">
+            <h1 class="display-4 mb-3">{{ course.name }}</h1>
+            <p class="lead text-muted">{{ course.description }}</p>
+            <div class="d-flex gap-3 align-items-center">
+                <span class="badge bg-primary">{{ lessons.count }} Lesson{{ lessons.count|pluralize }}</span>
+                <small class="text-muted">Created: {{ course.created_at|date:"M d, Y" }}</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Course Content -->
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Course Lessons</h5>
+                </div>
+                <div class="card-body">
+                    {% if lessons %}
+                        <div class="accordion accordion-flush" id="lessonsAccordion">
+                            {% for lesson in lessons %}
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button {% if not forloop.first %}collapsed{% endif %}" type="button" data-bs-toggle="collapse" data-bs-target="#lesson{{ lesson.id }}">
+                                            <span class="badge bg-info me-3">Lesson {{ forloop.counter }}</span>
+                                            <strong>{{ lesson.title }}</strong>
+                                        </button>
+                                    </h2>
+                                    <div id="lesson{{ lesson.id }}" class="accordion-collapse collapse {% if forloop.first %}show{% endif %}" data-bs-parent="#lessonsAccordion">
+                                        <div class="accordion-body">
+                                            <!-- Lesson Description -->
+                                            <h6 class="mb-3">Description</h6>
+                                            <p class="text-muted">{{ lesson.description }}</p>
+
+                                            <!-- Lesson Content -->
+                                            <h6 class="mb-3 mt-4">Content</h6>
+                                            <div class="lesson-content bg-light p-3 rounded mb-4">
+                                                {{ lesson.content|linebreaks }}
+                                            </div>
+
+                                            <!-- Questions Section -->
+                                            {% if lesson.questions.all %}
+                                                <h6 class="mb-3 mt-4">Exam Questions ({{ lesson.questions.count }})</h6>
+                                                <div class="questions-section">
+                                                    {% for question in lesson.questions.all %}
+                                                        <div class="card mb-3 border-left-primary">
+                                                            <div class="card-header bg-light">
+                                                                <div class="d-flex justify-content-between align-items-start">
+                                                                    <div>
+                                                                        <h6 class="mb-1">
+                                                                            <span class="badge bg-secondary">Q{{ forloop.counter }}</span>
+                                                                            <span class="badge bg-warning">{{ question.get_question_type_display }}</span>
+                                                                        </h6>
+                                                                        <p class="mb-0">{{ question.question_text }}</p>
+                                                                    </div>
+                                                                    <span class="badge bg-success">{{ question.points }} pts</span>
+                                                                </div>
+                                                            </div>
+                                                            <div class="card-body">
+                                                                <!-- Choices -->
+                                                                {% if question.choices.all %}
+                                                                    <h6 class="mb-2">Options:</h6>
+                                                                    <ul class="list-unstyled">
+                                                                        {% for choice in question.choices.all %}
+                                                                            <li class="mb-2 ps-3">
+                                                                                <div class="form-check">
+                                                                                    <input class="form-check-input" type="radio" name="question_{{ question.id }}" id="choice_{{ choice.id }}" value="{{ choice.id }}" disabled>
+                                                                                    <label class="form-check-label {% if choice.is_correct %}text-success fw-bold{% endif %}" for="choice_{{ choice.id }}">
+                                                                                        {{ choice.choice_text }}
+                                                                                        {% if choice.is_correct %}
+                                                                                            <span class="badge bg-success ms-2">✓ Correct</span>
+                                                                                        {% endif %}
+                                                                                    </label>
+                                                                                </div>
+                                                                            </li>
+                                                                        {% endfor %}
+                                                                    </ul>
+                                                                {% else %}
+                                                                    <p class="text-muted">No choices available for this question yet.</p>
+                                                                {% endif %}
+                                                            </div>
+                                                        </div>
+                                                    {% endfor %}
+                                                </div>
+
+                                                <!-- Exam Button -->
+                                                <div class="mt-4 d-grid gap-2">
+                                                    <a href="{% url 'online_course:submit' lesson.id %}" class="btn btn-primary btn-lg">
+                                                        <i class="fas fa-pencil-alt"></i> Take Exam
+                                                    </a>
+                                                </div>
+                                            {% else %}
+                                                <div class="alert alert-info">
+                                                    <i class="fas fa-info-circle"></i> No exam questions available for this lesson yet.
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle"></i> This course doesn't have any lessons yet.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0">Course Info</h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row">
+                        <dt class="col-sm-6">Total Lessons:</dt>
+                        <dd class="col-sm-6">
+                            <strong>{{ lessons.count }}</strong>
+                        </dd>
+
+                        <dt class="col-sm-6">Total Questions:</dt>
+                        <dd class="col-sm-6">
+                            <strong>
+                                {% with total_questions=lessons|dictsort:"pk"|length %}
+                                    {{ total_questions }}
+                                {% endwith %}
+                            </strong>
+                        </dd>
+
+                        <dt class="col-sm-6">Created:</dt>
+                        <dd class="col-sm-6">
+                            <small>{{ course.created_at|date:"M d, Y" }}</small>
+                        </dd>
+
+                        <dt class="col-sm-6">Last Updated:</dt>
+                        <dd class="col-sm-6">
+                            <small>{{ course.updated_at|date:"M d, Y" }}</small>
+                        </dd>
+                    </dl>
+                </div>
+            </div>
+
+            <!-- Back Button -->
+            <div class="d-grid gap-2">
+                <a href="{% url 'online_course:course_list' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to Courses
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .border-left-primary {
+        border-left: 4px solid #007bff;
+    }
+
+    .questions-section .card {
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .questions-section .card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+    }
+
+    .lesson-content {
+        border-left: 4px solid #0dcaf0;
+    }
+</style>
+{% endblock %}

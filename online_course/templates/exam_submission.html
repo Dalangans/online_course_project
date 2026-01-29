@@ -1,0 +1,196 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ lesson.title }} - Exam Submission{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-lg-10">
+            <h1 class="display-5 mb-2">{{ lesson.title }} - Exam</h1>
+            <p class="text-muted">Course: <strong>{{ lesson.course.name }}</strong></p>
+        </div>
+    </div>
+
+    <!-- Warning for re-submission -->
+    {% if existing_submission and existing_submission.status == 'GRADED' %}
+        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+            <strong><i class="fas fa-info-circle"></i> Note:</strong> You have already submitted this exam. Your previous score was <strong>{{ existing_submission.score }}%</strong>. Submitting again will overwrite your previous result.
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    {% endif %}
+
+    <!-- Exam Form -->
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Answer the following questions</h5>
+                </div>
+                <div class="card-body">
+                    {% if questions %}
+                        <form method="post" id="examForm" novalidate>
+                            {% csrf_token %}
+
+                            {% for question in questions %}
+                                <div class="card mb-4 border-left-info">
+                                    <div class="card-header bg-light">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div>
+                                                <h6 class="mb-1">
+                                                    <span class="badge bg-secondary">Question {{ forloop.counter }}/{{ questions.count }}</span>
+                                                    <span class="badge bg-warning text-dark">{{ question.get_question_type_display }}</span>
+                                                </h6>
+                                                <p class="mb-0 fw-bold">{{ question.question_text }}</p>
+                                            </div>
+                                            <span class="badge bg-success">{{ question.points }} pts</span>
+                                        </div>
+                                    </div>
+                                    <div class="card-body">
+                                        {% if question.choices.all %}
+                                            <div class="question-options">
+                                                {% for choice in question.choices.all %}
+                                                    <div class="form-check mb-3">
+                                                        <input class="form-check-input" type="radio" name="question_{{ question.id }}" id="choice_{{ choice.id }}" value="{{ choice.id }}" required>
+                                                        <label class="form-check-label" for="choice_{{ choice.id }}">
+                                                            {{ choice.choice_text }}
+                                                        </label>
+                                                    </div>
+                                                {% endfor %}
+                                            </div>
+                                            <div class="invalid-feedback d-block" id="feedback_{{ question.id }}">
+                                                Please select an answer for this question.
+                                            </div>
+                                        {% else %}
+                                            <div class="alert alert-warning">
+                                                <i class="fas fa-exclamation-triangle"></i> No choices available for this question.
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% endfor %}
+
+                            <!-- Submit Button -->
+                            <div class="row mt-5">
+                                <div class="col-md-6">
+                                    <button type="submit" class="btn btn-primary btn-lg w-100" id="submitBtn">
+                                        <i class="fas fa-check-circle"></i> Submit Exam
+                                    </button>
+                                </div>
+                                <div class="col-md-6">
+                                    <a href="{% url 'online_course:course_details' lesson.course.id %}" class="btn btn-outline-secondary btn-lg w-100">
+                                        <i class="fas fa-times"></i> Cancel
+                                    </a>
+                                </div>
+                            </div>
+                        </form>
+                    {% else %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> There are no questions available for this exam yet.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Info Sidebar -->
+        <div class="col-lg-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0">Exam Information</h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row">
+                        <dt class="col-sm-8">Total Questions:</dt>
+                        <dd class="col-sm-4">
+                            <strong>{{ questions.count }}</strong>
+                        </dd>
+
+                        <dt class="col-sm-8">Total Points:</dt>
+                        <dd class="col-sm-4">
+                            <strong>
+                                {% with total=questions|dictsort:"points"|length %}
+                                    {% if questions %}
+                                        {{ questions|length }}
+                                    {% else %}
+                                        0
+                                    {% endif %}
+                                {% endwith %}
+                            </strong>
+                        </dd>
+
+                        <dt class="col-sm-8">Passing Score:</dt>
+                        <dd class="col-sm-4">
+                            <strong>60%</strong>
+                        </dd>
+                    </dl>
+
+                    <div class="alert alert-info mt-4" role="alert">
+                        <h6 class="alert-heading">
+                            <i class="fas fa-lightbulb"></i> Tips
+                        </h6>
+                        <ul class="mb-0 ps-3">
+                            <li>Read each question carefully</li>
+                            <li>Select only one answer per question</li>
+                            <li>You can review and change answers before submitting</li>
+                            <li>All fields are required</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .border-left-info {
+        border-left: 4px solid #0dcaf0;
+    }
+
+    .form-check {
+        padding-left: 0;
+    }
+
+    .form-check-input {
+        margin-right: 0.5rem;
+    }
+
+    .question-options {
+        padding: 1rem;
+        background-color: #f8f9fa;
+        border-radius: 0.5rem;
+    }
+
+    .card {
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+    }
+</style>
+
+<script>
+    document.getElementById('examForm').addEventListener('submit', function(e) {
+        if (!this.checkValidity()) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            // Scroll to first invalid input
+            const invalidInput = this.querySelector(':invalid');
+            if (invalidInput) {
+                invalidInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+        this.classList.add('was-validated');
+    });
+
+    // Disable submit button during submission
+    document.getElementById('submitBtn').addEventListener('click', function() {
+        this.disabled = true;
+        this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+    });
+</script>
+{% endblock %}
