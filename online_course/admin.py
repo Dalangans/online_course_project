@@ -66,6 +66,22 @@ class ChoiceInline(admin.TabularInline):
     ordering = ['order']
 
 
+class ChoiceAdmin(admin.ModelAdmin):
+    """Admin interface for Choice model"""
+    list_display = ['choice_text', 'question', 'is_correct', 'order']
+    list_filter = ['is_correct', 'question__lesson', 'created_at']
+    search_fields = ['choice_text', 'question__question_text']
+    ordering = ['question', 'order']
+    fieldsets = (
+        ('Choice Information', {
+            'fields': ['question', 'choice_text']
+        }),
+        ('Settings', {
+            'fields': ['is_correct', 'order']
+        }),
+    )
+
+
 class LessonInline(admin.TabularInline):
     """Inline admin for Lessons within a Course"""
     model = Lesson
@@ -131,6 +147,27 @@ class SubmissionAnswerInline(admin.TabularInline):
     can_delete = False
 
 
+class SubmissionAnswerAdmin(admin.ModelAdmin):
+    """Admin interface for SubmissionAnswer model"""
+    list_display = ['submission', 'question', 'selected_choice', 'is_correct', 'points_earned']
+    list_filter = ['is_correct', 'submission__status', 'created_at']
+    search_fields = ['question__question_text', 'submission__student__username', 'selected_choice__choice_text']
+    ordering = ['-created_at']
+    readonly_fields = ['submission', 'question', 'selected_choice', 'is_correct', 'points_earned', 'created_at', 'updated_at']
+    fieldsets = (
+        ('Answer Information', {
+            'fields': ['submission', 'question', 'selected_choice']
+        }),
+        ('Results', {
+            'fields': ['is_correct', 'points_earned']
+        }),
+        ('Timestamps', {
+            'fields': ['created_at', 'updated_at'],
+            'classes': ['collapse']
+        }),
+    )
+
+
 class SubmissionAdmin(admin.ModelAdmin):
     """Admin interface for Submission model"""
     list_display = ['student', 'lesson', 'status', 'score', 'correct_answers', 'submitted_at']
@@ -159,4 +196,6 @@ admin.site.register(Learner, LearnerAdmin)
 admin.site.register(Course, CourseAdmin)
 admin.site.register(Lesson, LessonAdmin)
 admin.site.register(Question, QuestionAdmin)
+admin.site.register(Choice, ChoiceAdmin)
 admin.site.register(Submission, SubmissionAdmin)
+admin.site.register(SubmissionAnswer, SubmissionAnswerAdmin)
