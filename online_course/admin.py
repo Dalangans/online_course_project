@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Course, Lesson, Question, Choice, Submission, SubmissionAnswer
+from .models import Instructor, Learner, Course, Lesson, Question, Choice, Submission, SubmissionAnswer
 
 
 class QuestionInline(admin.TabularInline):
@@ -8,6 +8,54 @@ class QuestionInline(admin.TabularInline):
     extra = 1
     fields = ['question_text', 'question_type', 'points', 'order']
     ordering = ['order']
+
+
+class InstructorAdmin(admin.ModelAdmin):
+    """Admin interface for Instructor model"""
+    list_display = ['get_full_name', 'get_username', 'specialization', 'created_at']
+    list_filter = ['created_at', 'specialization']
+    search_fields = ['user__first_name', 'user__last_name', 'user__username', 'specialization']
+    ordering = ['-created_at']
+    fieldsets = (
+        ('User Information', {
+            'fields': ['user']
+        }),
+        ('Instructor Details', {
+            'fields': ['bio', 'specialization']
+        }),
+    )
+
+    def get_full_name(self, obj):
+        return obj.user.get_full_name() or obj.user.username
+    get_full_name.short_description = 'Name'
+
+    def get_username(self, obj):
+        return obj.user.username
+    get_username.short_description = 'Username'
+
+
+class LearnerAdmin(admin.ModelAdmin):
+    """Admin interface for Learner model"""
+    list_display = ['get_full_name', 'get_username', 'progress', 'enrollment_date']
+    list_filter = ['enrollment_date', 'progress']
+    search_fields = ['user__first_name', 'user__last_name', 'user__username']
+    ordering = ['-enrollment_date']
+    fieldsets = (
+        ('User Information', {
+            'fields': ['user']
+        }),
+        ('Learning Progress', {
+            'fields': ['progress', 'enrollment_date']
+        }),
+    )
+
+    def get_full_name(self, obj):
+        return obj.user.get_full_name() or obj.user.username
+    get_full_name.short_description = 'Name'
+
+    def get_username(self, obj):
+        return obj.user.username
+    get_username.short_description = 'Username'
 
 
 class ChoiceInline(admin.TabularInline):
@@ -106,6 +154,8 @@ class SubmissionAdmin(admin.ModelAdmin):
 
 
 # Register models
+admin.site.register(Instructor, InstructorAdmin)
+admin.site.register(Learner, LearnerAdmin)
 admin.site.register(Course, CourseAdmin)
 admin.site.register(Lesson, LessonAdmin)
 admin.site.register(Question, QuestionAdmin)

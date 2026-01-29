@@ -3,6 +3,36 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 from django.contrib.auth.models import User
 
 
+class Instructor(models.Model):
+    """Model for storing instructor information"""
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='instructor_profile')
+    bio = models.TextField(blank=True, null=True)
+    specialization = models.CharField(max_length=100, blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Instructor: {self.user.get_full_name() or self.user.username}"
+
+    class Meta:
+        ordering = ['-created_at']
+
+
+class Learner(models.Model):
+    """Model for storing learner information"""
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='learner_profile')
+    enrollment_date = models.DateTimeField(auto_now_add=True)
+    progress = models.IntegerField(default=0, validators=[MinValueValidator(0), MaxValueValidator(100)])
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Learner: {self.user.get_full_name() or self.user.username}"
+
+    class Meta:
+        ordering = ['-enrollment_date']
+
+
 class Course(models.Model):
     """Model for storing course information"""
     name = models.CharField(max_length=100)
